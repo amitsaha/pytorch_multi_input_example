@@ -75,7 +75,7 @@ df = remove_outliers(df, "area")
 df = df.iloc[3:]
 print(df.describe())
 ax = sns.boxplot(x=df["price"])
-# plt.show()
+plt.show()
 print(df)
 df.to_pickle(f"{data_path}df.pkl")
 # print(list(df["zpid"] + ".png"))

@@ -7,9 +7,9 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms
 
-import pytorch_lightning as pl
-from pytorch_lightning.logging import TensorBoardLogger
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+import lightning as pl
+from lightning.loggers import TensorBoardLogger
+from lightning.callbacks.early_stopping import EarlyStopping
 
 data_path = "./data/"
 

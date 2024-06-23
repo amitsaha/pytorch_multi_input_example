@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 from PIL import Image
 
 import torch
@@ -7,9 +6,15 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms
 
-import pytorch_lightning as pl
-from pytorch_lightning.logging import TensorBoardLogger
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+print("imports complete")
+
+import lightning as pl
+from lightning.pytorch.loggers import TensorBoardLogger
+from lightning.pytorch.callbacks.early_stopping import EarlyStopping
+
+import numpy as np
+
+
 
 
 data_path = "./data/"
@@ -79,6 +84,8 @@ class LitClassifier(pl.LightningModule):
         self.ln6 = nn.Linear(10, 5)
         self.ln7 = nn.Linear(10, 1)
 
+        self.validation_step_outputs = []
+
     def forward(self, img, tab):
         img = self.conv1(img)
 
@@ -124,13 +131,18 @@ class LitClassifier(pl.LightningModule):
         y_pred = y_pred.double()
 
         val_loss = criterion(y_pred, y)
+        self.validation_step_outputs.append(val_loss)
 
         return {"val_loss": val_loss}
 
-    def validation_epoch_end(self, outputs):
-        avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
-        tensorboard_logs = {"val_loss": avg_loss}
-        return {"val_loss": avg_loss, "log": tensorboard_logs}
+    def on_validation_epoch_end(self):
+        epoch_average = torch.stack(self.validation_step_outputs).mean()
+        #avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
+        tensorboard_logs = {"val_loss": epoch_average}
+        self.validation_step_outputs.clear()  # free memory
+        #return {"val_loss": avg_loss, "log": tensorboard_logs}
+    
+
 
     def test_step(self, batch, batch_idx):
         image, tabular, y = batch
@@ -176,13 +188,14 @@ if __name__ == "__main__":
     early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=5000, patience=7, verbose=False, mode="min")
 
     model = LitClassifier()
-    trainer = pl.Trainer(gpus=1, logger=logger, early_stop_callback=early_stop_callback)
+    trainer = pl.Trainer(logger=logger, callbacks=[early_stop_callback])
 
-    lr_finder = trainer.lr_find(model)
-    fig = lr_finder.plot(suggest=True, show=True)
-    new_lr = lr_finder.suggestion()
-    print(new_lr)
-    model.hparams.lr = new_lr
+    #lr_finder = trainer.tuner.lr_find(model)
+
+    #fig = lr_finder.plot(suggest=True, show=True)
+    #new_lr = lr_finder.suggestion()
+    #print(new_lr)
+    #model.hparams.lr = new_lr
 
     trainer.fit(model)
     trainer.test(model)
