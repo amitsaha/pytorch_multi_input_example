@@ -140,7 +140,8 @@ class LitClassifier(pl.LightningModule):
         #avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
         tensorboard_logs = {"val_loss": epoch_average}
         self.validation_step_outputs.clear()  # free memory
-        #return {"val_loss": avg_loss, "log": tensorboard_logs}
+        self.log("val_loss", epoch_average)
+        return {"val_loss": epoch_average, "log": tensorboard_logs}
     
 
 
